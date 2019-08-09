@@ -36,7 +36,7 @@ see the [tags on this repository](/../../tags).
 
 * [Petr Řehoř](https://github.com/prehor) - Initial work.
 
-See also the list of [contributors](https://github.com/iBossOrg/Mk/contributors)
+See also the list of [contributors](../../contributors)
 who participated in this project.
 
 ## License
