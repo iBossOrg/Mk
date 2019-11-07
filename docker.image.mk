@@ -51,7 +51,10 @@ DOCKER_IMAGE_DEPOT	?= $(PROJECT_DIR)
 ### BASE_IMAGE #################################################################
 
 # Baseimage name
+ifdef BASE_IMAGE_NAME
+BASE_IMAGE_TAG		?= latest
 BASE_IMAGE		?= $(BASE_IMAGE_NAME):$(BASE_IMAGE_TAG)
+endif
 
 ### DOCKER_IMAGE ###############################################################
 
@@ -64,7 +67,6 @@ DOCKER_IMAGE_URL	?= $(GITHUB_URL)
 
 DOCKER_IMAGE_NAME	?= $(DOCKER_VENDOR)/$(DOCKER_NAME)
 DOCKER_IMAGE		?= $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
-
 
 ### DOCKER_BUILD ###############################################################
 
@@ -308,12 +310,6 @@ $(error Unable to determine Docker image name. Define DOCKER_NAME.)
 endif
 ifndef DOCKER_IMAGE_TAG
 $(error Unable to determine Docker image tag. Define DOCKER_IMAGE_TAG.)
-endif
-ifndef BASE_IMAGE_NAME
-$(error Unable to determine base image name. Define BASE_IMAGE_NAME.)
-endif
-ifndef BASE_IMAGE_TAG
-$(error Unable to determine base image tag. Define BASE_IMAGE_TAG.)
 endif
 
 ################################################################################
@@ -634,7 +630,11 @@ docker-pull: docker-pull-dependencies docker-pull-image docker-pull-testimage
 # Pull project base image from the Docker registry
 .PHONY: docker-pull-baseimage
 docker-pull-baseimage:
+ifdef BASE_IMAGE
 	@docker pull $(BASE_IMAGE)
+else
+	@true
+endif
 
 # Pull the project image dependencies from the Docker registry
 .PHONY: docker-pull-dependencies
