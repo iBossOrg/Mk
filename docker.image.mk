@@ -14,8 +14,8 @@ SHELL			+= -e
 
 # GitHub repository
 # git config --get remote.origin.url
-# - https://github.com/sicz/docker-baseimage.git
-# - git@github.com:sicz/docker-baseimage.git
+# - https://github.com/iBossOrg/docker-alpine.git
+# - git@github.com:iBossOrg/docker-alpine.git
 GITHUB_URL		?= $(shell \
 				git config --get remote.origin.url | \
 				sed -E	-e "s|^git@github.com:|https://github.com/|" \
@@ -204,7 +204,7 @@ COMPOSE_RM_OPTS		+= --remove-orphans -v
 ### TEST #######################################################################
 
 # Docker test image
-TEST_IMAGE_NAME		?= sicz/dockerspec
+TEST_IMAGE_NAME		?= iboss/dockerspec
 TEST_IMAGE_TAG		?= latest
 TEST_IMAGE		?= $(TEST_IMAGE_NAME):$(TEST_IMAGE_TAG)
 
