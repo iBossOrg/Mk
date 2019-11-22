@@ -155,7 +155,7 @@ TEST_CONTAINER_NAME	?= $(CONTAINER_ID)_$(TEST_SERVICE_NAME)_1
 # Support multiple configurations of the Docker Compose
 ifneq ($(DOCKER_CONFIGS),)
 DOCKER_CONFIG_FILE	?= .docker-config
-DOCKER_CONFIG		?= $(shell \
+DOCKER_CONFIG_NAME	?= $(shell \
 				if [ -e $(DOCKER_CONFIG_FILE) ]; then \
 					cat $(DOCKER_CONFIG_FILE); \
 				else \
@@ -165,11 +165,11 @@ DOCKER_CONFIG		?= $(shell \
 endif
 
 # Docker Compose file
-ifeq ($(DOCKER_CONFIG),)
+ifeq ($(DOCKER_CONFIG_NAME),)
 COMPOSE_FILES		?= docker-compose.yml
 else
 COMPOSE_FILES		?= docker-compose.yml \
-			   docker-compose.$(DOCKER_CONFIG).yml
+			   docker-compose.$(DOCKER_CONFIG_NAME).yml
 endif
 COMPOSE_FILE		?= $(shell echo "$(foreach COMPOSE_FILE,$(COMPOSE_FILES),$(abspath $(PROJECT_DIR)/$(COMPOSE_FILE)))" | tr ' ' ':')
 
@@ -371,7 +371,7 @@ CONTAINER_ID:		$(CONTAINER_ID)
 CONTAINER_ID_FILE:	$(CONTAINER_ID_FILE)
 
 DOCKER_CONFIGS:		$(DOCKER_CONFIGS)
-DOCKER_CONFIG:		$(DOCKER_CONFIG)
+DOCKER_CONFIG_NAME:	$(DOCKER_CONFIG_NAME)
 DOCKER_CONFIG_FILE:	$(DOCKER_CONFIG_FILE)
 
 CREATE_TARGET:		$(CREATE_TARGET)
@@ -480,7 +480,7 @@ $(CONTAINER_ID_FILE):
 .PHONY: docker-config
 docker-config:
 ifneq ($(DOCKER_CONFIGS),)
-	@$(ECHO) "Using $(DOCKER_CONFIG) configuration"
+	@$(ECHO) "Using $(DOCKER_CONFIG_NAME) configuration"
 endif
 
 # Display the configuration file
@@ -506,11 +506,11 @@ docker-makevars: docker-config
 .PHONY: set-docker-config
 set-docker-config: $(RM_TARGET)
 ifneq ($(DOCKER_CONFIGS),)
-ifeq ($(filter $(DOCKER_CONFIG),$(DOCKER_CONFIGS)),)
-	$(error Unknown Docker Compose configuration "$(DOCKER_CONFIG)")
+ifeq ($(filter $(DOCKER_CONFIG_NAME),$(DOCKER_CONFIGS)),)
+	$(error Unknown Docker Compose configuration "$(DOCKER_CONFIG_NAME)")
 endif
-	@$(ECHO) $(DOCKER_CONFIG) > $(DOCKER_CONFIG_FILE)
-	@$(ECHO) "Setting Docker Compose configuration to $(DOCKER_CONFIG)"
+	@$(ECHO) $(DOCKER_CONFIG_NAME) > $(DOCKER_CONFIG_FILE)
+	@$(ECHO) "Setting Docker Compose configuration to $(DOCKER_CONFIG_NAME)"
 else
 	$(error Docker Compose does not support multiple configs)
 endif
