@@ -269,7 +269,7 @@ WAIT_SERVICE_NAME	?= wait
 
 # Docker shell options and command
 SHELL_OPTS		+= --interactive --tty
-SHELL_CMD		?= /docker-entrypoint.sh /bin/sh --login
+SHELL_CMD		?= /docker/entrypoint /bin/sh --login
 
 # Run the shell as an user
 ifdef CONTAINER_USER
