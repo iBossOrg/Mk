@@ -54,6 +54,7 @@ DOCKER_IMAGE_DEPOT	?= $(PROJECT_DIR)
 ifdef BASE_IMAGE_NAME
 BASE_IMAGE_TAG		?= latest
 BASE_IMAGE		?= $(BASE_IMAGE_NAME):$(BASE_IMAGE_TAG)
+DOCKER_IMAGE_DEPENDENCIES += $(BASE_IMAGE)
 endif
 
 ### DOCKER_IMAGE ###############################################################
@@ -139,7 +140,7 @@ CONTAINER_ID		?= $(shell \
 			   )
 
 # Docker service name
-SERVICE_NAME		?= $(shell echo $(DOCKER_NAME) | sed -E -e "s/[^[:alnum:]_]+/_/g")
+SERVICE_NAME		?= container
 
 # Docker Compose project name
 COMPOSE_NAME		?= $(CONTAINER_ID)
@@ -171,7 +172,7 @@ else
 COMPOSE_FILES		?= docker-compose.yml \
 			   docker-compose.$(DOCKER_CONFIG_NAME).yml
 endif
-COMPOSE_FILE		?= $(shell echo "$(foreach COMPOSE_FILE,$(COMPOSE_FILES),$(abspath $(PROJECT_DIR)/$(COMPOSE_FILE)))" | tr ' ' ':')
+COMPOSE_FILE		?= $(shell echo "$(foreach COMPOSE_FILE,$(COMPOSE_FILES),$(abspath $(BUILD_DIR)/$(COMPOSE_FILE)))" | tr ' ' ':')
 
 # Variables used in the Docker Compose file
 override COMPOSE_VARS	+= $(BUILD_VARS) \
@@ -215,25 +216,9 @@ TEST_SERVICE_NAME	?= test
 override TEST_VARS	+= CONTAINER_NAME \
 			   SERVICE_NAME \
 			   SPEC_OPTS
-TEST_CONTAINER_VARS	?= $(BUILD_VARS) \
-			   $(TEST_VARS)
 TEST_COMPOSE_VARS	?= $(COMPOSE_VARS) \
 			   $(TEST_VARS) \
 			   TEST_CMD
-TEST_STACK_VARS		?= $(STACK_VARS) \
-			   $(TEST_VARS) \
-			   TEST_CMD
-
-# Classic Docker test container options
-TEST_CONTAINER_OPTS	+= --interactive \
-			   --tty \
-			   --name $(TEST_CONTAINER_NAME) \
-			   $(foreach VAR,$(TEST_CONTAINER_VARS),--env "$(VAR)=$($(VAR))") \
-			   --volume /var/run/docker.sock:/var/run/docker.sock \
-			   --volume $(abspath $(TEST_DIR))/.rspec:/root/.rspec \
-			   --volume $(abspath $(TEST_DIR))/spec:/root/spec \
-			   --workdir /root/$(TEST_DIR) \
-			   --rm
 
 # File containing environment variables
 TEST_ENV_FILE		?= $(CURDIR)/.docker-test-env
@@ -267,14 +252,16 @@ WAIT_SERVICE_NAME	?= wait
 
 ### SHELL ######################################################################
 
-# Docker shell options and command
-SHELL_OPTS		+= --interactive --tty
-SHELL_CMD		?= bash --login
-
 # Run the shell as an user
 ifdef CONTAINER_USER
 SHELL_OPTS		+= --user $(CONTAINER_USER)
+else
+SHELL_OPTS		?= --user 0
 endif
+
+# Docker shell options and command
+SHELL_OPTS		+= --interactive --tty
+SHELL_CMD		?= bash --login
 
 ### DOCKER_REGISTRY ############################################################
 
@@ -620,21 +607,17 @@ docker-clean: docker-rm
 	@rm -f .docker-* $(DOCKER_IMAGE_DEPOT)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image
 	@find . -type f -name '*~' | xargs rm -f
 
+# Prune Docker engine
+.PHONY: docker-prune
+docker-prune:
+	@docker system prune -f
+
 ### DOCKER_REGISTRY_TARGETS ####################################################
 
 # Pull all images from the Docker Registry
 .PHONY: docker-pull
-docker-pull: docker-pull-dependencies docker-pull-image docker-pull-testimage
+docker-pull: docker-pull-dependencies docker-pull-testimage docker-pull-image
 	@true
-
-# Pull project base image from the Docker registry
-.PHONY: docker-pull-baseimage
-docker-pull-baseimage:
-ifdef BASE_IMAGE
-	@docker pull $(BASE_IMAGE)
-else
-	@true
-endif
 
 # Pull the project image dependencies from the Docker registry
 .PHONY: docker-pull-dependencies
