@@ -140,7 +140,7 @@ CONTAINER_ID		?= $(shell \
 			   )
 
 # Docker service name
-SERVICE_NAME		?= container
+SERVICE_NAME		?= service
 
 # Docker Compose project name
 COMPOSE_NAME		?= $(CONTAINER_ID)
