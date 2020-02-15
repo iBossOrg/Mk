@@ -1,12 +1,7 @@
 ### SHELL ######################################################################
 
-# Replace Debian Almquist Shell with Bash
-ifeq ($(realpath $(SHELL)),/bin/dash)
-SHELL   		:= /bin/bash
-endif
-
-# Exit immediately if a command exits with a non-zero exit status
-# TODO: .SHELLFLAGS does not exists on obsoleted macOS X-Code make
+# Immediately exit if the command ends with a non-zero exit status
+# TODO: Obsoleted macOS X-Code make 3.81 does not support .SHELLFLAGS
 # .SHELLFLAGS		= -ec
 SHELL			+= -e
 
