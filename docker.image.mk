@@ -56,7 +56,7 @@ endif
 
 # Docker image name
 DOCKER_VENDOR		?= $(shell echo $(GITHUB_USER) | tr '[:upper:]' '[:lower:]')
-DOCKER_NAME		?= $(shell echo $(GITHUB_REPOSITORY) | sed -E -e "s|^docker-||" | tr '[:upper:]' '[:lower:]')
+DOCKER_NAME		?= $(shell echo $(GITHUB_REPOSITORY) | sed -E -e 's/^(docker|k8s)-//' | tr '[:upper:]' '[:lower:]')
 DOCKER_IMAGE_DESC	?= $(GITHUB_USER)/$(GITHUB_REPOSITORY)
 DOCKER_IMAGE_TAG	?= latest
 DOCKER_IMAGE_URL	?= $(GITHUB_URL)
