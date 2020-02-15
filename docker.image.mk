@@ -237,9 +237,6 @@ ifeq ($(DOCKER_HOST),)
 override SPEC_OPTS	+= --tty
 endif
 
-# CircleCI configuration file
-CIRCLECI_CONFIG_FILE	?= $(PROJECT_DIR)/.circleci/config.yml
-
 ### WAIT #######################################################################
 
 # Wait service name
@@ -377,7 +374,6 @@ COMPOSE_LOGS_OPTS: 	$(COMPOSE_LOGS_OPTS)
 COMPOSE_STOP_OPTS: 	$(COMPOSE_STOP_OPTS)
 COMPOSE_RM_OPTS:	$(COMPOSE_RM_OPTS)
 
-CIRCLECI:		$(CIRCLECI)
 TEST_IMAGE_NAME:	$(TEST_IMAGE_NAME)
 TEST_IMAGE_TAG:		$(TEST_IMAGE_TAG)
 TEST_IMAGE:		$(TEST_IMAGE)
