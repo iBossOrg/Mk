@@ -417,9 +417,8 @@ export DOCKER_REGISTRY_MAKE_VARS
 # Build a new image with using the Docker layer caching
 .PHONY: docker-build
 docker-build:
-	@set -eo pipefail; \
-	$(ECHO) "Building image $(DOCKER_IMAGE)"; \
-	docker build $(BUILD_OPTS) -f $(BUILD_DOCKER_FILE) $(BUILD_DIR); \
+	@$(ECHO) "*** Building image $(DOCKER_IMAGE)"
+	@docker build $(BUILD_OPTS) -f $(BUILD_DOCKER_FILE) $(BUILD_DIR); \
 	BUILD_ID="`docker inspect --format '{{.Id}}' $(DOCKER_IMAGE)`"; \
 	if [ -n "$(DOCKER_IMAGE_ID)" -a "$(DOCKER_IMAGE_ID)" != "$${BUILD_ID}" ]; then \
 		$(ECHO) "Image changed, building with current labels"; \
@@ -432,9 +431,8 @@ docker-build:
 # Build a new image without using the Docker layer caching
 .PHONY: docker-rebuild
 docker-rebuild:
-	@set -eo pipefail; \
-	$(ECHO) "Rebuilding image $(DOCKER_IMAGE)"; \
-	docker build $(BUILD_OPTS) \
+	@$(ECHO) "*** Rebuilding image $(DOCKER_IMAGE)"
+	@docker build $(BUILD_OPTS) \
 		--label org.opencontainers.image.created=$(BUILD_DATE) \
 		--label org.opencontainers.image.revision=$(GIT_REVISION) \
 		-f $(BUILD_DOCKER_FILE) --no-cache $(BUILD_DIR)
@@ -443,7 +441,7 @@ docker-rebuild:
 .PHONY: docker-tag
 docker-tag:
 ifneq ($(DOCKER_IMAGE_TAGS),)
-	@$(ECHO) "Tagging image with tags $(DOCKER_IMAGE_TAGS)"
+	@$(ECHO) "*** Tagging image with tags $(DOCKER_IMAGE_TAGS)"
 	@$(foreach TAG,$(DOCKER_IMAGE_TAGS), \
 		docker tag $(DOCKER_IMAGE) $(DOCKER_IMAGE_NAME):$(TAG); \
 	)
@@ -466,7 +464,7 @@ $(CONTAINER_ID_FILE):
 .PHONY: docker-config
 docker-config:
 ifneq ($(DOCKER_CONFIGS),)
-	@$(ECHO) "Using $(DOCKER_CONFIG_NAME) configuration"
+	@$(ECHO) "*** Using $(DOCKER_CONFIG_NAME) configuration"
 endif
 
 # Display the configuration file
@@ -559,8 +557,7 @@ docker-logs-tail:
 # Run the shell in the running container
 .PHONY: docker-shell
 docker-shell: $(START_TARGET)
-	@set -eo pipefail; \
-	docker exec $(SHELL_OPTS) $(CONTAINER_NAME) $(SHELL_CMD)
+	@docker exec $(SHELL_OPTS) $(CONTAINER_NAME) $(SHELL_CMD)
 
 # Run the tests
 .PHONY: docker-test
