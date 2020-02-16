@@ -36,12 +36,20 @@ BUILD_DATE		?= $(shell date -u "+%Y-%m-%dT%H:%M:%SZ")
 
 ### PROJECT_DIRS ###############################################################
 
-# Project directories
+# Project root directory
 PROJECT_DIR		?= $(CURDIR)
+
+# Docker build directory
 BUILD_DIR		?= $(PROJECT_DIR)
+
+# Dockerfile directory
+DOCKER_DIR		?= $(BUILD_DIR)
+
+# Docker test directory
 TEST_DIR		?= $(BUILD_DIR)
-VARIANT_DIR		?= $(BUILD_DIR)
-DOCKER_IMAGE_DEPOT	?= $(PROJECT_DIR)
+
+# Docker image directory
+DOCKER_IMAGE_DIR	?= $(PROJECT_DIR)
 
 ### BASE_IMAGE #################################################################
 
@@ -68,7 +76,7 @@ DOCKER_IMAGE		?= $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
 # Dockerfile name
 DOCKER_FILE		?= Dockerfile
-BUILD_DOCKER_FILE	?= $(abspath $(VARIANT_DIR)/$(DOCKER_FILE))
+BUILD_DOCKER_FILE	?= $(abspath $(DOCKER_DIR)/$(DOCKER_FILE))
 
 # Build image with tags
 BUILD_OPTS		+= --tag $(DOCKER_IMAGE) \
@@ -181,7 +189,7 @@ override COMPOSE_VARS	+= $(BUILD_VARS) \
 			   TEST_ENV_FILE \
 			   TEST_IMAGE \
 			   TEST_PROJECT_DIR \
-			   VARIANT_DIR
+			   DOCKER_DIR
 
 # Docker Compose command
 COMPOSE_CMD		?= touch $(TEST_ENV_FILE); \
@@ -337,7 +345,7 @@ CURDIR:			$(CURDIR)
 PROJECT_DIR:		$(PROJECT_DIR)
 
 DOCKER_FILE:		$(DOCKER_FILE)
-VARIANT_DIR:		$(VARIANT_DIR)
+DOCKER_DIR:		$(DOCKER_DIR)
 BUILD_DOCKER_FILE:	$(BUILD_DOCKER_FILE)
 BUILD_DIR:		$(BUILD_DIR)
 BUILD_VARS:		$(BUILD_VARS)
@@ -595,7 +603,7 @@ docker-rm:
 # Remove all containers and work files
 .PHONY: docker-clean
 docker-clean: docker-rm
-	@rm -f .docker-* $(DOCKER_IMAGE_DEPOT)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image
+	@rm -f .docker-* $(DOCKER_IMAGE_DIR)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image
 	@find . -type f -name '*~' | xargs rm -f
 
 # Prune Docker engine
@@ -633,13 +641,13 @@ docker-push:
 # Load the project image from file
 .PHONY: docker-load-image
 docker-load-image:
-	@cat $(DOCKER_IMAGE_DEPOT)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image | \
+	@cat $(DOCKER_IMAGE_DIR)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image | \
 	gunzip | docker image load
 
 # Save the project image to file
 .PHONY: docker-save-image
 docker-save-image:
 	@docker image save $(foreach TAG,$(DOCKER_IMAGE_TAG) $(DOCKER_IMAGE_TAGS), $(DOCKER_IMAGE_NAME):$(TAG)) | \
-	gzip > $(DOCKER_IMAGE_DEPOT)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image
+	gzip > $(DOCKER_IMAGE_DIR)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image
 
 ################################################################################
