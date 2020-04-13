@@ -561,14 +561,17 @@ docker-shell: $(START_TARGET)
 
 # Run the tests
 .PHONY: docker-test
-docker-test: $(START_TARGET) .docker-compose-test
+docker-test: $(START_TARGET) .docker-compose-test .docker-test-env
 	@$(ECHO) "Running tests in container $(TEST_CONTAINER_NAME)"
 	@$(COMPOSE_CMD) run --rm $(TEST_SERVICE_NAME) $(TEST_CMD)
 
-.docker-compose-test:
-	@$(ECHO) "Creating container $(TEST_CONTAINER_NAME)"
+.PHONY: .docker-test-env
+.docker-test-env:
 	@rm -f $(TEST_ENV_FILE)
 	@$(foreach VAR,$(TEST_COMPOSE_VARS),echo "$(VAR)=$($(VAR))" >> $(TEST_ENV_FILE);)
+
+.docker-compose-test:
+	@$(ECHO) "Creating container $(TEST_CONTAINER_NAME)"
 	@$(COMPOSE_CMD) up --no-start --no-build $(TEST_SERVICE_NAME)
 # Copy the project dir to the test container if the Docker host is remote
 ifeq ($(TEST_PROJECT_DIR),)
