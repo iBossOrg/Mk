@@ -197,13 +197,13 @@ COMPOSE_CMD		?= touch $(TEST_ENV_FILE); \
 			   docker-compose
 
 # Docker Compose create options
-COMPOSE_CREATE_OPTS	+= --no-build
+COMPOSE_CREATE_OPTS	?= --no-build
 
 # Docker Compose up options
-COMPOSE_UP_OPTS		+= -d --remove-orphans $(COMPOSE_CREATE_OPTS)
+COMPOSE_UP_OPTS		?= -d --remove-orphans $(COMPOSE_CREATE_OPTS)
 
 # Docker Compose down options
-COMPOSE_RM_OPTS		+= --remove-orphans -v
+COMPOSE_RM_OPTS		?= --remove-orphans -v
 
 ### LINT #######################################################################
 
@@ -449,7 +449,8 @@ $(HADOLINT_YAML):
 .PHONY: docker-build
 docker-build:
 	@$(ECHO) "*** Building image $(DOCKER_IMAGE)"
-	@docker build $(BUILD_OPTS) -f $(BUILD_DOCKER_FILE) $(BUILD_DIR); \
+	@set -x; \
+	docker build $(BUILD_OPTS) -f $(BUILD_DOCKER_FILE) $(BUILD_DIR); \
 	BUILD_ID="`docker inspect --format '{{.Id}}' $(DOCKER_IMAGE)`"; \
 	if [ -n "$(DOCKER_IMAGE_ID)" -a "$(DOCKER_IMAGE_ID)" != "$${BUILD_ID}" ]; then \
 		$(ECHO) "Image changed, building with current labels"; \
@@ -463,7 +464,8 @@ docker-build:
 .PHONY: docker-rebuild
 docker-rebuild:
 	@$(ECHO) "*** Rebuilding image $(DOCKER_IMAGE)"
-	@docker build $(BUILD_OPTS) \
+	@set -x; \
+	docker build $(BUILD_OPTS) \
 		--label org.opencontainers.image.created=$(BUILD_DATE) \
 		--label org.opencontainers.image.revision=$(GIT_REVISION) \
 		-f $(BUILD_DOCKER_FILE) --no-cache $(BUILD_DIR)
@@ -542,7 +544,8 @@ docker-create: $(CONTAINER_ID_FILE) docker-config .docker-compose-create
 
 .docker-compose-create:
 	@cd $(PROJECT_DIR) && \
-	 $(COMPOSE_CMD) up --no-start $(COMPOSE_CREATE_OPTS) $(COMPOSE_SERVICE_NAME)
+	set -x; \
+	$(COMPOSE_CMD) up --no-start $(COMPOSE_CREATE_OPTS) $(COMPOSE_SERVICE_NAME)
 	@$(ECHO) $(COMPOSE_SERVICE_NAME) > $@
 
 # Start the containers
@@ -551,7 +554,8 @@ docker-start: docker-config .docker-compose-start
 	@true
 
 .docker-compose-start: $(CREATE_TARGET)
-	@$(COMPOSE_CMD) up $(COMPOSE_UP_OPTS) $(COMPOSE_SERVICE_NAME)
+	@set -x; \
+	$(COMPOSE_CMD) up $(COMPOSE_UP_OPTS) $(COMPOSE_SERVICE_NAME)
 	@$(ECHO) $(COMPOSE_SERVICE_NAME) > $@
 
 # Wait for the start of the containers
@@ -569,32 +573,35 @@ docker-wait: $(START_TARGET)
 # Display running containers
 .PHONY: docker-ps
 docker-ps:
-	@$(COMPOSE_CMD) ps $(COMPOSE_PS_OPTS)
+	@set -x; \
+	$(COMPOSE_CMD) ps $(COMPOSE_PS_OPTS)
 
 # Display the containers logs
 .PHONY: docker-logs
 docker-logs:
 	@if [ -e .docker-compose-start ]; then \
-		$(COMPOSE_CMD) logs $(COMPOSE_LOGS_OPTS); \
+		(set -x; $(COMPOSE_CMD) logs $(COMPOSE_LOGS_OPTS)); \
 	fi
 
 # Follow the containers logs
 .PHONY: docker-logs-tail
 docker-logs-tail:
 	@if [ -e .docker-compose-start ]; then \
-		$(COMPOSE_CMD) logs --follow $(COMPOSE_LOGS_OPTS); \
+		(set -x; $(COMPOSE_CMD) logs --follow $(COMPOSE_LOGS_OPTS)); \
 	fi
 
 # Run the shell in the running container
 .PHONY: docker-shell
 docker-shell: $(START_TARGET)
-	@docker exec $(SHELL_OPTS) $(CONTAINER_NAME) $(SHELL_CMD)
+	@set -x; \
+	docker exec $(SHELL_OPTS) $(CONTAINER_NAME) $(SHELL_CMD)
 
 # Run the tests
 .PHONY: docker-test
 docker-test: $(START_TARGET) .docker-compose-test .docker-test-env
 	@$(ECHO) "Running tests in container $(TEST_CONTAINER_NAME)"
-	@$(COMPOSE_CMD) run --rm $(TEST_SERVICE_NAME) $(TEST_CMD)
+	@set -x; \
+	$(COMPOSE_CMD) run --rm $(TEST_SERVICE_NAME) $(TEST_CMD)
 
 .PHONY: .docker-test-env
 .docker-test-env:
@@ -603,11 +610,13 @@ docker-test: $(START_TARGET) .docker-compose-test .docker-test-env
 
 .docker-compose-test:
 	@$(ECHO) "Creating container $(TEST_CONTAINER_NAME)"
-	@$(COMPOSE_CMD) up --no-start --no-build $(TEST_SERVICE_NAME)
+	@set -x; \
+	$(COMPOSE_CMD) up --no-start --no-build $(TEST_SERVICE_NAME)
 # Copy the project dir to the test container if the Docker host is remote
 ifeq ($(TEST_PROJECT_DIR),)
 	@$(ECHO) "Copying project to container $(TEST_CONTAINER_NAME)"
-	@docker cp $(PROJECT_DIR) $(TEST_CONTAINER_NAME):$(dir $(PROJECT_DIR))
+	@set -x; \
+	docker cp $(PROJECT_DIR) $(TEST_CONTAINER_NAME):$(dir $(PROJECT_DIR))
 endif
 	@echo $(TEST_SERVICE_NAME) > $@
 
@@ -615,7 +624,7 @@ endif
 .PHONY: docker-stop
 docker-stop:
 	@if [ -e .docker-compose-start ]; then \
-		$(COMPOSE_CMD) stop $(COMPOSE_STOP_OPTS); \
+		(set -x; $(COMPOSE_CMD) stop $(COMPOSE_STOP_OPTS)); \
 	fi
 
 # Restart the containers
@@ -627,7 +636,7 @@ docker-restart:
 .PHONY: docker-rm
 docker-rm:
 	@if [ -e .docker-compose-create ]; then \
-		$(COMPOSE_CMD) down $(COMPOSE_RM_OPTS); \
+		(set -x; $(COMPOSE_CMD) down $(COMPOSE_RM_OPTS)); \
 	fi
 	@rm -f .docker-compose-*
 
@@ -640,7 +649,8 @@ docker-clean: docker-rm
 # Prune Docker engine
 .PHONY: docker-prune
 docker-prune:
-	@docker system prune -f
+	@set -x; \
+	docker system prune -f
 
 ### DOCKER_REGISTRY_TARGETS ####################################################
 
@@ -652,33 +662,39 @@ docker-pull: docker-pull-dependencies docker-pull-testimage docker-pull-image
 # Pull the project image dependencies from the Docker registry
 .PHONY: docker-pull-dependencies
 docker-pull-dependencies:
-	@$(foreach DOCKER_IMAGE,$(DOCKER_IMAGE_DEPENDENCIES),docker pull $(DOCKER_IMAGE);echo;)
+	@set -x; \
+	$(foreach DOCKER_IMAGE,$(DOCKER_IMAGE_DEPENDENCIES),docker pull $(DOCKER_IMAGE);echo;)
 
 # Pull the project image from the Docker registry
 .PHONY: docker-pull-image
 docker-pull-image:
-	@$(foreach TAG,$(DOCKER_PULL_TAGS),docker pull $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(TAG);echo;)
+	@set -x; \
+	$(foreach TAG,$(DOCKER_PULL_TAGS),docker pull $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(TAG);echo;)
 
 # Pull the test image from the Docker registry
 .PHONY: docker-pull-testimage
 docker-pull-testimage:
-	@docker pull $(TEST_IMAGE)
+	@set -x; \
+	docker pull $(TEST_IMAGE)
 
 # Posh the project image to the Docker registry
 .PHONY: docker-push
 docker-push:
-	@$(foreach TAG,$(DOCKER_PUSH_TAGS),docker push $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(TAG);echo;)
+	@set -x; \
+	$(foreach TAG,$(DOCKER_PUSH_TAGS),docker push $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(TAG);echo;)
 
 # Load the project image from file
 .PHONY: docker-load-image
 docker-load-image:
-	@cat $(DOCKER_IMAGE_DIR)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image | \
+	@set -x; \
+	cat $(DOCKER_IMAGE_DIR)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image | \
 	gunzip | docker image load
 
 # Save the project image to file
 .PHONY: docker-save-image
 docker-save-image:
-	@docker image save $(foreach TAG,$(DOCKER_IMAGE_TAG) $(DOCKER_IMAGE_TAGS), $(DOCKER_IMAGE_NAME):$(TAG)) | \
+	@set -x; \
+	docker image save $(foreach TAG,$(DOCKER_IMAGE_TAG) $(DOCKER_IMAGE_TAGS), $(DOCKER_IMAGE_NAME):$(TAG)) | \
 	gzip > $(DOCKER_IMAGE_DIR)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image
 
 ################################################################################
