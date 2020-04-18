@@ -671,13 +671,13 @@ docker-pull: docker-pull-dependencies docker-pull-testimage docker-pull-image
 .PHONY: docker-pull-dependencies
 docker-pull-dependencies:
 	@set -x; \
-	$(foreach DOCKER_IMAGE,$(DOCKER_IMAGE_DEPENDENCIES),docker pull $(DOCKER_IMAGE);echo;)
+	$(foreach DOCKER_IMAGE,$(DOCKER_IMAGE_DEPENDENCIES),docker pull $(DOCKER_IMAGE);)
 
 # Pull the project image from the Docker registry
 .PHONY: docker-pull-image
 docker-pull-image:
 	@set -x; \
-	$(foreach TAG,$(DOCKER_PULL_TAGS),docker pull $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(TAG);echo;)
+	$(foreach TAG,$(DOCKER_PULL_TAGS),docker pull $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(TAG);)
 
 # Pull the test image from the Docker registry
 .PHONY: docker-pull-testimage
@@ -689,7 +689,7 @@ docker-pull-testimage:
 .PHONY: docker-push
 docker-push:
 	@set -x; \
-	$(foreach TAG,$(DOCKER_PUSH_TAGS),docker push $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(TAG);echo;)
+	$(foreach TAG,$(DOCKER_PUSH_TAGS),docker push $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(TAG);)
 
 # Load the project image from file
 .PHONY: docker-load-image
