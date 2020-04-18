@@ -74,6 +74,13 @@ DOCKER_IMAGE		?= $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
 ### DOCKER_BUILD ###############################################################
 
+# Docker command
+DOCKER_CMD		?= docker
+DOCKER_BUILD_CMD	?= $(DOCKER_BUILD_KIT) $(DOCKER_CMD)
+
+# Use Docker Build Kit
+DOCKER_BUILD_KIT	?= 1
+
 # Dockerfile name
 DOCKER_FILE		?= Dockerfile
 BUILD_DOCKER_FILE	?= $(abspath $(DOCKER_DIR)/$(DOCKER_FILE))
@@ -434,7 +441,7 @@ export DOCKER_REGISTRY_MAKE_VARS
 docker-lint: $(HADOLINT_YAML)
 	@$(ECHO) "+++ hadolint help: https://github.com/hadolint/hadolint#rules" > /dev/stderr
 	@set -x; \
-	docker run --rm \
+	$(DOCKER_CMD) run --rm \
 	--volume $(realpath $(DOCKER_FILE)):/Dockerfile \
 	--volume $(realpath $(HADOLINT_YAML)):/.hadolint.yaml \
 	hadolint/hadolint hadolint Dockerfile
@@ -450,7 +457,7 @@ $(HADOLINT_YAML):
 docker-build:
 	@$(ECHO) "*** Building image $(DOCKER_IMAGE)"
 	@set -x; \
-	docker build $(BUILD_OPTS) -f $(BUILD_DOCKER_FILE) $(BUILD_DIR); \
+	$(DOCKER_BUILD_CMD) build $(BUILD_OPTS) -f $(BUILD_DOCKER_FILE) $(BUILD_DIR); \
 	BUILD_ID="`docker inspect --format '{{.Id}}' $(DOCKER_IMAGE)`"; \
 	if [ -n "$(DOCKER_IMAGE_ID)" -a "$(DOCKER_IMAGE_ID)" != "$${BUILD_ID}" ]; then \
 		$(ECHO) "Image changed, building with current labels"; \
@@ -465,7 +472,7 @@ docker-build:
 docker-rebuild:
 	@$(ECHO) "*** Rebuilding image $(DOCKER_IMAGE)"
 	@set -x; \
-	docker build $(BUILD_OPTS) \
+	$(DOCKER_BUILD_CMD) build $(BUILD_OPTS) \
 		--label org.opencontainers.image.created=$(BUILD_DATE) \
 		--label org.opencontainers.image.revision=$(GIT_REVISION) \
 		-f $(BUILD_DOCKER_FILE) --no-cache $(BUILD_DIR)
@@ -475,8 +482,9 @@ docker-rebuild:
 docker-tag:
 ifneq ($(DOCKER_IMAGE_TAGS),)
 	@$(ECHO) "*** Tagging image with tags $(DOCKER_IMAGE_TAGS)"
-	@$(foreach TAG,$(DOCKER_IMAGE_TAGS), \
-		docker tag $(DOCKER_IMAGE) $(DOCKER_IMAGE_NAME):$(TAG); \
+	@set -x; \
+	$(foreach TAG,$(DOCKER_IMAGE_TAGS), \
+		$(DOCKER_CMD) tag $(DOCKER_IMAGE) $(DOCKER_IMAGE_NAME):$(TAG); \
 	)
 endif
 
@@ -594,7 +602,7 @@ docker-logs-tail:
 .PHONY: docker-shell
 docker-shell: $(START_TARGET)
 	@set -x; \
-	docker exec $(SHELL_OPTS) $(CONTAINER_NAME) $(SHELL_CMD)
+	$(DOCKER_CMD) exec $(SHELL_OPTS) $(CONTAINER_NAME) $(SHELL_CMD)
 
 # Run the tests
 .PHONY: docker-test
@@ -616,7 +624,7 @@ docker-test: $(START_TARGET) .docker-compose-test .docker-test-env
 ifeq ($(TEST_PROJECT_DIR),)
 	@$(ECHO) "Copying project to container $(TEST_CONTAINER_NAME)"
 	@set -x; \
-	docker cp $(PROJECT_DIR) $(TEST_CONTAINER_NAME):$(dir $(PROJECT_DIR))
+	$(DOCKER_CMD) cp $(PROJECT_DIR) $(TEST_CONTAINER_NAME):$(dir $(PROJECT_DIR))
 endif
 	@echo $(TEST_SERVICE_NAME) > $@
 
@@ -650,7 +658,7 @@ docker-clean: docker-rm
 .PHONY: docker-prune
 docker-prune:
 	@set -x; \
-	docker system prune -f
+	$(DOCKER_CMD) system prune -f
 
 ### DOCKER_REGISTRY_TARGETS ####################################################
 
@@ -675,7 +683,7 @@ docker-pull-image:
 .PHONY: docker-pull-testimage
 docker-pull-testimage:
 	@set -x; \
-	docker pull $(TEST_IMAGE)
+	$(DOCKER_CMD) pull $(TEST_IMAGE)
 
 # Posh the project image to the Docker registry
 .PHONY: docker-push
@@ -688,13 +696,13 @@ docker-push:
 docker-load-image:
 	@set -x; \
 	cat $(DOCKER_IMAGE_DIR)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image | \
-	gunzip | docker image load
+	gunzip | $(DOCKER_CMD) image load
 
 # Save the project image to file
 .PHONY: docker-save-image
 docker-save-image:
 	@set -x; \
-	docker image save $(foreach TAG,$(DOCKER_IMAGE_TAG) $(DOCKER_IMAGE_TAGS), $(DOCKER_IMAGE_NAME):$(TAG)) | \
+	$(DOCKER_CMD) image save $(foreach TAG,$(DOCKER_IMAGE_TAG) $(DOCKER_IMAGE_TAGS), $(DOCKER_IMAGE_NAME):$(TAG)) | \
 	gzip > $(DOCKER_IMAGE_DIR)/$(DOCKER_VENDOR)-$(DOCKER_NAME)-$(DOCKER_IMAGE_TAG).image
 
 ################################################################################
