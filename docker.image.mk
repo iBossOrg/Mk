@@ -442,7 +442,7 @@ docker-lint: $(HADOLINT_YAML)
 	@$(ECHO) "+++ hadolint help: https://github.com/hadolint/hadolint#rules" > /dev/stderr
 	@set -x; \
 	$(DOCKER_CMD) run --rm \
-	--volume $(realpath $(DOCKER_FILE)):/Dockerfile \
+	--volume $(realpath $(BUILD_DOCKER_FILE)):/Dockerfile \
 	--volume $(realpath $(HADOLINT_YAML)):/.hadolint.yaml \
 	hadolint/hadolint hadolint Dockerfile
 
