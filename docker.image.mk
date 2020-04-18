@@ -491,8 +491,8 @@ endif
 ### EXECUTOR_TARGETS ###########################################################
 
 # Display the Docker image version
-.PHONY: display-version-header
-display-version-header:
+.PHONY: docker-version
+docker-version:
 	@$(ECHO)
 	@$(ECHO) "===> $(DOCKER_IMAGE)"
 	@$(ECHO)
