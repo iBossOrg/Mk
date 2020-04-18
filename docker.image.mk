@@ -205,6 +205,15 @@ COMPOSE_UP_OPTS		+= -d --remove-orphans $(COMPOSE_CREATE_OPTS)
 # Docker Compose down options
 COMPOSE_RM_OPTS		+= --remove-orphans -v
 
+### LINT #######################################################################
+
+# Hadolint config file
+#ifneq (,$(wildcard $(DOCKER_DIR)/.hadolint.yaml))
+HADOLINT_YAML		?= $(DOCKER_DIR)/.hadolint.yaml
+#else
+#HADOLINT_YAML		?= /dev/null
+#endif
+
 ### TEST #######################################################################
 
 # Docker test image
@@ -305,6 +314,7 @@ endif
 MAKE_VARS		?= GITHUB_MAKE_VARS \
 			   BASE_IMAGE_MAKE_VARS \
 			   DOCKER_IMAGE_MAKE_VARS \
+			   LINT_MAKE_VARS \
 			   BUILD_MAKE_VARS \
 			   EXECUTOR_MAKE_VARS \
 			   SHELL_MAKE_VARS \
@@ -339,6 +349,11 @@ DOCKER_IMAGE_NAME:	$(DOCKER_IMAGE_NAME)
 DOCKER_IMAGE:		$(DOCKER_IMAGE)
 endef
 export DOCKER_IMAGE_MAKE_VARS
+
+define LINT_MAKE_VARS
+HADOLINT_YAML:		$(HADOLINT_YAML)
+endef
+export
 
 define BUILD_MAKE_VARS
 CURDIR:			$(CURDIR)
@@ -411,6 +426,22 @@ DOCKER_PULL_TAGS:	$(DOCKER_PULL_TAGS)
 DOCKER_IMAGE_DEPENDENCIES: $(DOCKER_IMAGE_DEPENDENCIES)
 endef
 export DOCKER_REGISTRY_MAKE_VARS
+
+### LINT_TARGETS ###############################################################
+
+# Lint Docker files
+.PHONY: docker-lint
+docker-lint: $(HADOLINT_YAML)
+	@$(ECHO) "+++ hadolint help: https://github.com/hadolint/hadolint#rules" > /dev/stderr
+	@set -x; \
+	docker run --rm \
+	--volume $(realpath $(DOCKER_FILE)):/Dockerfile \
+	--volume $(realpath $(HADOLINT_YAML)):/.hadolint.yaml \
+	hadolint/hadolint hadolint Dockerfile
+
+$(HADOLINT_YAML):
+	@set -x; \
+	$(ECHO) "ignore:" > $@
 
 ### BUILD_TARGETS ##############################################################
 
